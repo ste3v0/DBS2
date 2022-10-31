@@ -99,15 +99,24 @@ select * from Auftrag where ErlDat is null and Dauer is not null --es gibt keine
 
 create TRIGGER RechnungAbgeschlossen on Rechnung for INSERT, UPDATE, DELETE
 AS
-if (select Count(r.AufNr) from Rechnung r join Auftrag a on r.AufNr=a.Aufnr where a.Dauer is null or r.RechBetrag< dbo.kalkAnfahrtspreis(a.Anfahrt))>0
+if (select Count(r.AufNr) from Rechnung r join Auftrag a on r.AufNr=a.Aufnr where a.Dauer is null )>0
     begin 
-        PRINT 'Der Auftrag ist noch nicht erledigt oder der Preis falsch kalkuliert'
+        PRINT 'Der Auftrag ist noch nicht erledigt'
+        ROLLBACK TRANSACTION
+        RETURN
+    END
+
+if (select Count(r.Aufnr) from Rechnung r join Auftrag a on r.AufNr=a.Aufnr where r.RechBetrag< dbo.kalkAnfahrtspreis(a.Anfahrt))>0
+    BEGIN
+        print 'Der Rechnungsbetrag wurde falsch kalkuliert'
         ROLLBACK TRANSACTION
     END
 
+
+
 drop trigger RechnungAbgeschlossen
 
-
+DELETE from Rechnung
 --3.2a
 insert into Rechnung values (1281,10026, '2022-10-15', 154.50)
 insert into Rechnung values (1152,10218, '2022-10-15', 180)
